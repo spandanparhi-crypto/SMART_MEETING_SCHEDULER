@@ -158,11 +158,10 @@ Add your project screenshots inside the **screenshots** folder.
 Example:
 
 ```markdown
-![Home](screenshots/home.png)
+![Home]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 202944.png"
+![Dashboard]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203015.png"
 
-![Dashboard](screenshots/dashboard.png)
-
-![Meeting List](screenshots/meetings.png)
+![Meeting List]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203222.png"
 ```
 
 ---
