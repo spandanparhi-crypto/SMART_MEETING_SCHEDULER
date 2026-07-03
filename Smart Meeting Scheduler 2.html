@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slotwise — Smart Meeting Scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d13;
+    --surface: rgba(27, 31, 43, 0.7);
+    --surface-2: #1e2333;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #f1f3f9;
+    --text-dim: #9aa1b5;
+    --mint: #6ee7b7;
+    --mint-dim: rgba(110, 231, 183, 0.15);
+    --coral: #f45b69;
+    --amber: #ffb454;
+    --perspective: 1200px;
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 50% 0%, #1a1e30 0%, var(--bg) 70%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* Header Configuration */
+  header {
+    margin-bottom: 48px;
+    animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--mint);
+    margin-bottom: 14px;
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 1.1;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { 
+    color: var(--text-dim); 
+    font-weight: 400;
+    background: linear-gradient(to right, #9aa1b5, #51586d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .sub { 
+    color: var(--text-dim); 
+    font-size: 16px; 
+    max-width: 580px; 
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* 3D Animated Interactive Layout Spaces */
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    align-items: start;
+    perspective: var(--perspective);
+  }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform-style: preserve-3d;
+    transform: rotateX(2deg) rotateY(-2deg);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
+  }
+
+  .panel:hover {
+    transform: rotateX(0deg) rotateY(0deg) translateY(-4px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .panel h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+  }
+
+  /* Dynamic Participants Styles */
+  .p-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+  
+  .p-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .p-row.active {
+    border-color: var(--mint);
+    background: rgba(110, 231, 183, 0.05);
+    box-shadow: 0 0 15px rgba(110, 231, 183, 0.1);
+    transform: translateZ(10px);
+  }
+
+  .swatch { 
+    width: 14px; 
+    height: 14px; 
+    border-radius: 5px; 
+    flex-shrink: 0;
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  .p-name { flex: 1; cursor: pointer; font-weight: 500; }
+  .p-count { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
+  
+  .p-remove {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .p-remove:hover { color: var(--coral); background: rgba(244,91,105,.1); }
+
+  .add-row { display: flex; gap: 10px; }
+  
+  input[type=text] {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--mint); }
+
+  button { font-family: 'Inter', sans-serif; cursor: pointer; border: none; }
+  
+  .btn-add {
+    background: var(--mint);
+    color: #0d1410;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    transition: transform 0.2s, filter 0.2s;
+  }
+  .btn-add:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(1px); }
+
+  .hint {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .hint b { color: var(--text); }
+
+  /* Grid Interface */
+  .grid-toolbar { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 24px; 
+    flex-wrap: wrap; 
+    gap: 12px; 
+  }
+  
+  .legend { display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 4px; }
+
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: 64px repeat(5, 1fr);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    user-select: none;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .g-head {
+    background: var(--surface-2);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    letter-spacing: 0.05em;
+  }
+  .g-head:first-child { border-left: none; }
+
+  .time-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 4px 10px 0 0;
+    border-top: 1px solid var(--border);
+    background: rgba(11, 13, 19, 0.5);
+  }
+
+  .cell {
+    height: 30px;
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.01);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cell:hover { 
+    background: rgba(255, 255, 255, 0.04) !important;
+    z-index: 2;
+    box-shadow: inset 0 0 0 1px var(--mint);
+  }
+  
+  .cell.best::after {
+    content: '';
+    position: absolute; inset: 3px;
+    border: 2px dashed var(--amber);
+    border-radius: 4px;
+    pointer-events: none;
+    animation: pulseBorder 1.5s infinite alternate;
+  }
+
+  /* Smart Recommendation Section */
+  .suggestion {
+    margin-top: 24px;
+    background: linear-gradient(135deg, rgba(110, 231, 183, 0.12), rgba(110, 231, 183, 0.02));
+    border: 1px solid rgba(110, 231, 183, 0.3);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    transform: translateZ(15px);
+    transition: all 0.3s ease;
+  }
+  .suggestion.empty { 
+    border-color: var(--border); 
+    background: rgba(255,255,255,0.02); 
+    transform: none;
+  }
+  
+  .sug-text .k { 
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 11px; 
+    color: var(--mint); 
+    letter-spacing: .1em; 
+    text-transform: uppercase; 
+  }
+  .sug-text .v { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-top: 6px; }
+  .sug-text .meta { font-size: 13.5px; color: var(--text-dim); margin-top: 4px; }
+  
+  .btn-schedule {
+    background: var(--mint);
+    color: #0d1410;
+    font-weight: 700;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(110, 231, 183, 0.2);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-schedule:hover:not(:disabled) { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 20px rgba(110, 231, 183, 0.4); 
+  }
+  .btn-schedule:disabled { 
+    background: var(--surface-2); 
+    color: var(--text-dim); 
+    box-shadow: none; 
+    cursor: not-allowed; 
+  }
+
+  /* Meetings List Space */
+  .meetings { margin-top: 40px; }
+  .meetings h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+  
+  .meeting-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--mint);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .meeting-card .when {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--mint);
+    font-weight: 500;
+    min-width: 170px;
+  }
+  .meeting-card .who { font-size: 14px; color: var(--text-dim); flex: 1; }
+  .meeting-card .del { background: none; color: var(--text-dim); font-size: 18px; cursor: pointer; padding: 4px 10px; border-radius: 8px; }
+  .meeting-card .del:hover { color: var(--coral); background: rgba(244,91,105,.1); }
+  
+  .empty-state {
+    color: var(--text-dim);
+    font-size: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+    background: rgba(0,0,0,0.05);
+  }
+
+  /* Animations Elements */
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseBorder {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Slotwise · Smart Meeting Scheduler</div>
+    <h1>Stop asking <span>"does 3pm work?"</span></h1>
+    <p class="sub">Mark each person's free hours. The grid lights up wherever everyone overlaps — pick the brightest slot and it's booked. No back-and-forth.</p>
+  </header>
+
+  <div class="layout">
+    <!-- Left interactive panel: participants management -->
+    <div class="panel">
+      <h2>Participants</h2>
+      <div class="p-list" id="pList"></div>
+      <div class="add-row">
+        <input type="text" id="pInput" placeholder="Add a name…" maxlength="18">
+        <button class="btn-add" onclick="addParticipant()">Add</button>
+      </div>
+      <div class="hint">
+        Click a name to select them, then <b>drag across the grid</b> to paint their free hours. Each person gets their own color. Click again to erase.
+      </div>
+    </div>
+
+    <!-- Right interactive panel: availability grid space -->
+    <div>
+      <div class="panel">
+        <div class="grid-toolbar">
+          <h2 style="margin:0;">Weekly availability</h2>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-swatch" style="background:rgba(255,255,255,0.01); border:1px solid var(--border);"></div>No one free</div>
+            <div class="legend-item"><div class="legend-swatch" style="background:var(--mint-dim);"></div>Some overlap</div>
+            <div class="legend-item"><div class="legend-swatch" style="background:var(--mint);"></div>Everyone free</div>
+          </div>
+        </div>
+        <div class="schedule-grid" id="grid"></div>
+
+        <div class="suggestion empty" id="suggestion">
+          <div class="sug-text">
+            <div class="k">Best slot</div>
+            <div class="v" id="sugText">Add participants and paint their availability</div>
+            <div class="meta" id="sugMeta"></div>
+          </div>
+          <button class="btn-schedule" id="sugBtn" disabled onclick="scheduleBest()">Schedule this</button>
+        </div>
+      </div>
+
+      <div class="meetings">
+        <h2>Scheduled meetings</h2>
+        <div id="meetingsList"><div class="empty-state">No meetings scheduled yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri'];
+const START_HOUR = 8, END_HOUR = 20; 
+const SLOTS_PER_DAY = (END_HOUR - START_HOUR) * 2;
+const COLORS = ['#6ee7b7','#ffb454','#8ab4f8','#f45b69','#c792ea','#7fd1c1','#f2a1c2','#a3e635'];
+
+let participants = []; 
+let activeParticipant = null;
+let meetings = [];
+let isDragging = false, dragMode = null; 
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function slotLabel(slotIndex){
+  const totalMin = START_HOUR*60 + slotIndex*30;
+  let h = Math.floor(totalMin/60), m = totalMin%60;
+  const ampm = h>=12 ? 'PM':'AM';
+  let h12 = h%12; if(h12===0) h12=12;
+  return `${h12}:${m===0?'00':m}${ampm}`;
+}
+
+function addParticipant(){
+  const input = document.getElementById('pInput');
+  const name = input.value.trim();
+  if(!name) return;
+  const color = COLORS[participants.length % COLORS.length];
+  const p = { id: uid(), name, color, free: new Set() };
+  participants.push(p);
+  activeParticipant = p.id;
+  input.value = '';
+  renderParticipants();
+  renderGrid();
+  updateSuggestion();
+}
+
+function removeParticipant(id){
+  participants = participants.filter(p=>p.id!==id);
+  if(activeParticipant===id) activeParticipant = participants[0]?.id || null;
+  renderParticipants();
+  renderGrid();
+  updateSuggestion();
+}
+
+function setActive(id){
+  activeParticipant = id;
+  renderParticipants();
+}
+
+function renderParticipants(){
+  const list = document.getElementById('pList');
+  if(participants.length===0){
+    list.innerHTML = '<div class="empty-state">No one added yet.</div>';
+    return;
+  }
+  list.innerHTML = participants.map(p=>`
+    <div class="p-row ${p.id===activeParticipant?'active':''}">
+      <div class="swatch" style="background:${p.color}; color:${p.color}"></div>
+      <div class="p-name" onclick="setActive('${p.id}')">${p.name}</div>
+      <div class="p-count">${p.free.size * 0.5}h</div>
+      <button class="p-remove" onclick="removeParticipant('${p.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateRows = `42px repeat(${SLOTS_PER_DAY},30px)`;
+
+  grid.appendChild(el('g-head',''));
+  DAYS.forEach(d=> grid.appendChild(el('g-head',d)) );
+
+  for(let s=0; s<SLOTS_PER_DAY; s++){
+    const showLabel = s%2===0;
+    const label = el('time-label', showLabel? slotLabel(s) : '');
+    grid.appendChild(label);
+    DAYS.forEach((d,dayIdx)=>{
+      const key = `${dayIdx}-${s}`;
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.key = key;
+      paintCell(cell, key);
+      cell.addEventListener('mousedown', (e)=>{
+        if(!activeParticipant){ flashNeedParticipant(); return; }
+        isDragging = true;
+        const p = participants.find(x=>x.id===activeParticipant);
+        dragMode = p.free.has(key) ? 'remove' : 'add';
+        toggleSlot(key, dragMode);
+        e.preventDefault();
+      });
+      cell.addEventListener('mouseenter', ()=>{
+        if(isDragging) toggleSlot(key, dragMode);
+      });
+      grid.appendChild(cell);
+    });
+  }
+}
+
+function el(cls, text){
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = text;
+  return d;
+}
+
+function flashNeedParticipant(){
+  const input = document.getElementById('pInput');
+  input.focus();
+  input.style.borderColor = 'var(--coral)';
+  setTimeout(()=> input.style.borderColor = '', 500);
+}
+
+function toggleSlot(key, mode){
+  const p = participants.find(x=>x.id===activeParticipant);
+  if(!p) return;
+  if(mode==='add') p.free.add(key); else p.free.delete(key);
+  document.querySelectorAll(`.cell[data-key="${key}"]`).forEach(c=>paintCell(c,key));
+  renderParticipants();
+  updateSuggestion();
+}
+
+document.addEventListener('mouseup', ()=>{ isDragging=false; });
+
+function paintCell(cellEl, key){
+  const freeCount = participants.filter(p=>p.free.has(key)).length;
+  const total = participants.length;
+  cellEl.classList.remove('best');
+  if(total===0 || freeCount===0){
+    cellEl.style.background = 'transparent';
+    return;
+  }
+  if(freeCount===total){
+    cellEl.style.background = 'var(--mint)';
+  } else {
+    const ratio = freeCount/total;
+    cellEl.style.background = `color-mix(in srgb, var(--mint) ${Math.round(ratio*60)}%, rgba(30,35,51,0.4))`;
+  }
+}
+
+function repaintAll(){
+  document.querySelectorAll('.cell').forEach(c=>paintCell(c,c.dataset.key));
+}
+
+let bestSlotInfo = null;
+
+function updateSuggestion(){
+  repaintAll();
+  const box = document.getElementById('suggestion');
+  const sugText = document.getElementById('sugText');
+  const sugMeta = document.getElementById('sugMeta');
+  const btn = document.getElementById('sugBtn');
+
+  if(participants.length < 2){
+    box.classList.add('empty');
+    sugText.textContent = 'Add at least two participants to find overlaps';
+    sugMeta.textContent = '';
+    btn.disabled = true;
+    bestSlotInfo = null;
+    return;
+  }
+
+  const total = participants.length;
+  let bestRun = null;
+
+  for(let dayIdx=0; dayIdx<DAYS.length; dayIdx++){
+    let runStart = null, runLen = 0;
+    for(let s=0; s<=SLOTS_PER_DAY; s++){
+      const key = `${dayIdx}-${s}`;
+      const allFree = s<SLOTS_PER_DAY && participants.every(p=>p.free.has(key));
+      if(allFree){
+        if(runStart===null) runStart = s;
+        runLen++;
+      } else {
+        if(runStart!==null && (!bestRun || runLen>bestRun.len)){
+          bestRun = { dayIdx, start: runStart, len: runLen };
+        }
+        runStart = null; runLen = 0;
+      }
+    }
+  }
+
+  if(bestRun){
+    box.classList.remove('empty');
+    const dur = Math.min(bestRun.len, 2); 
+    sugText.textContent = `${DAYS[bestRun.dayIdx]} · ${slotLabel(bestRun.start)}–${slotLabel(bestRun.start+bestRun.len)}`;
+    sugMeta.textContent = `All ${total} participants free · ${bestRun.len*30} min window available`;
+    btn.disabled = false;
+    bestSlotInfo = bestRun;
+    highlightBest(bestRun);
+  } else {
+    box.classList.add('empty');
+    sugText.textContent = 'No time works for everyone yet — try adding more availability';
+    sugMeta.textContent = '';
+    btn.disabled = true;
+    bestSlotInfo = null;
+  }
+}
+
+function highlightBest(run){
+  for(let s=run.start; s<run.start+run.len; s++){
+    const key = `${run.dayIdx}-${s}`;
+    document.querySelectorAll(`.cell[data-key="${key}"]`).forEach(c=>c.classList.add('best'));
+  }
+}
+
+function scheduleBest(){
+  if(!bestSlotInfo) return;
+  const dur = Math.min(bestSlotInfo.len, 2); 
+  const meeting = {
+    id: uid(),
+    day: DAYS[bestSlotInfo.dayIdx],
+    start: slotLabel(bestSlotInfo.start),
+    end: slotLabel(bestSlotInfo.start + bestSlotInfo.len),
+    people: participants.map(p=>p.name)
+  };
+  meetings.unshift(meeting);
+  renderMeetings();
+}
+
+function removeMeeting(id){
+  meetings = meetings.filter(m=>m.id!==id);
+  renderMeetings();
+}
+
+function renderMeetings(){
+  const list = document.getElementById('meetingsList');
+  if(meetings.length===0){
+    list.innerHTML = '<div class="empty-state">No meetings scheduled yet.</div>';
+    return;
+  }
+  list.innerHTML = meetings.map(m=>`
+    <div class="meeting-card">
+      <div class="when">${m.day} · ${m.start}–${m.end}</div>
+      <div class="who">${m.people.join(', ')}</div>
+      <button class="del" onclick="removeMeeting('${m.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('pInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') addParticipant();
+});
+
+// Seed Initial Sandbox Setup Data
+document.getElementById('pInput').value = 'Priya';
+addParticipant();
+document.getElementById('pInput').value = 'Arjun';
+addParticipant();
+renderParticipants();
+renderGrid();
+updateSuggestion();
+</script>
+</body>
+</html>
