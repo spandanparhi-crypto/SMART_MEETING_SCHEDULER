@@ -151,21 +151,6 @@ Users can
 
 ---
 
-# 📸 Screenshots
-
-Add your project screenshots inside the **"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203222.png"** folder.
-
-Example:
-
-```markdown
-![Home]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 202944.png"
-![Dashboard]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203015.png"
-
-![Meeting List]"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203222.png"
-```
-
----
-
 # 💻 Installation
 
 Clone the repository
