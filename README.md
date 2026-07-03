@@ -153,7 +153,7 @@ Users can
 
 # 📸 Screenshots
 
-Add your project screenshots inside the **screenshots** folder.
+Add your project screenshots inside the **"C:\Users\ASUS\OneDrive\Pictures\Screenshots\Screenshot 2026-07-03 203222.png"** folder.
 
 Example:
 
