@@ -18,7 +18,7 @@
 
 🚀 **Try the Project Here**
 
-**https://robust-silver-mdldpetc.edgeone.dev/**
+**(https://zoophagous-jade-kf8n79du.edgeone.dev/)**
 
 ---
 
